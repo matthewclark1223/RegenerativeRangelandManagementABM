@@ -27,7 +27,8 @@ N_Plots<-4 #Must be perfect square number for the code below to work.
 Starting_Prop_Conservation<-0.25
 StartingGrassMin<-0.2#lower bound of grass/rain. i.e., the worst areas have 20% of the best (before grazing)
 Spatial_Autocorrelation_Rain<-0.98 # this affects the spatial autocorelation of grass growth (0 is fully random, 1 is completely determined by space)
-GrassPerCow<-0.05 # will need to play with this
+Animal_cost<-5 #Price of animals. Used for buying/selling and also financial gains from having animals
+GrassPerCow<-0.15 # will need to play with this
 Min_cows<-2 #min cows per person
 Cow_Inequality<-1 #exponential rate for within-community cattle distribution. higher numbers = more EQUAL
 Econ_Inequality<-0.1 # Scalar, lower number = less within-community inequality (centered at community mean)
@@ -75,13 +76,13 @@ mCons<-matrix(ConsComs,nrow=sqrt(N_Communities)) #Make a matrix
 
 rCons <- raster::raster(mCons) #Make a raster
 rCons<-raster::disaggregate(rCons, fact=2) #Expand so 4 plots/community
-raster::plot(rCons)
+#raster::plot(rCons)
 
 #Make Deprivation (community wellbeing). Approximation of NASA deprivation index
 mDepriv<-matrix(sample(x=Dep$Dep,size=N_Communities,replace=F),nrow=sqrt(N_Communities)) #sample from actual deprivation distribution of AOI
 rDepriv <- raster::raster(mDepriv)
 rDepriv<-raster::disaggregate(rDepriv, fact=2)
-raster::plot(rDepriv)
+#raster::plot(rDepriv)
 
 
 #Make Population. Approximation of CSA community data
@@ -89,23 +90,24 @@ mPop<-matrix(rpois(n=N_Communities,lambda=50),nrow=sqrt(N_Communities))
 rPop <- raster::raster(mPop)
 rPop<-raster::disaggregate(rPop, fact=2)
 rPop[]<-ceiling(rPop[]/4) #the disaggregation above effectively multiplies the number by 4
-raster::plot(rPop)
+#raster::plot(rPop)
 
 
 #Make ANIMAL Population. Approximation of cattle estimates from AOI
+#Old version Now linked to precip below.
 #This is not correlated with deprivation as these are not correlated across Southern Africa
-mAnimal<-matrix(rnbinom(n=N_Communities,mu=500,size=20),nrow=sqrt(N_Communities)) 
-rAnimal<- raster::raster(mAnimal)
-rAnimal<-raster::disaggregate(rAnimal, fact=2)
-rAnimal[]<-ceiling(rAnimal[]/4) #the disaggregation above effectively multiplies the number by 4
-raster::plot(rAnimal)
+#mAnimal<-matrix(rnbinom(n=N_Communities,mu=500,size=20),nrow=sqrt(N_Communities)) 
+#rAnimal<- raster::raster(mAnimal)
+#rAnimal<-raster::disaggregate(rAnimal, fact=2)
+#rAnimal[]<-ceiling(rAnimal[]/4) #the disaggregation above effectively multiplies the number by 4
+#raster::plot(rAnimal)
 
 ####Now do plot level characteristics
 
 #Make the plot IDs
 mPlotID<-matrix(1:(N_Communities*N_Plots),nrow=sqrt(N_Communities)*sqrt(N_Plots))
 rPlotID <- raster::raster(mPlotID)
-raster::plot(rPlotID)
+#raster::plot(rPlotID)
 
 #Make the t0 rain (grazing free grass cover) at each plot
 #First make grass growth without cows. This assumes that all land has same growing potential. Rain is the only determinant 
@@ -116,10 +118,22 @@ rT0Rain[]<- (rT0Rain[] - min(rT0Rain[])) / (max(rT0Rain[]) - min(rT0Rain[])) * (
 rT0Rain[]<-floor(rT0Rain[]*100) #Make discrete
 raster::plot(rT0Rain)
 
+#NOW make animal population linked to precip
+rT0RainAg<-raster::aggregate(rT0Rain, fact=2)
+#Make ANIMAL Population. Approximation of cattle estimates from AOI
+#This is not correlated with deprivation as these are not correlated across Southern Africa
+rAnimal<-rT0RainAg
+rAnimal[]<-rnbinom(n=length(rT0RainAg[]),mu=rT0RainAg[]*5,size=20)
+rAnimal<-raster::disaggregate(rAnimal, fact=2)
+rAnimal[]<-ceiling(rAnimal[]/4) #the disaggregation above effectively multiplies the number by 4
+
+
+
+
 #Now we need to assign each plot as resting or not based on whether it's in a conservation area
 #Choose random. Later this will be the one with least grass, but not at start bc cows haven't grazed yet
 source("../RCode/GrazedBinarySimulation.R")
-raster::plot(rGrazed) # Returns this raster with 1/4 of the conservation plots labeled as 0
+#raster::plot(rGrazed) # Returns this raster with 1/4 of the conservation plots labeled as 0
 
 
 #Now for each community, we need to distribute the grazing evenly across the grazed plots
@@ -265,13 +279,17 @@ Ranchers <- Ranchers%>%dplyr::arrange(stock_count, decreasing = TRUE)%>%
          PastStockChangeProp=PastStockChangeAnimal/PastStock)%>%
   arrange(CommID,person_id)
 
-
+#Make a total economic wellbeing used for social learning (their animals and money)
+Ranchers<-Ranchers%>%
+  mutate(Money=economic_wellbeing)%>%
+  mutate(TotalEconomicWellbeing=Money+(stock_count *Animal_cost))%>%
+  select(-economic_wellbeing)
 
 #ggplot(Ranchers)+geom_histogram(aes(x=economic_wellbeing))+facet_wrap(~CommID)
 
 #See here that cows and weath are associated within community, but not across communities
 #This again, approximates the actual data from southern africa
-ggplot(Ranchers,aes(x=stock_count,y=economic_wellbeing))+geom_point()
+#ggplot(Ranchers,aes(x=stock_count,y=economic_wellbeing))+geom_point()
 
 
 

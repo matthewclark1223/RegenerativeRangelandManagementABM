@@ -4,20 +4,20 @@ Supplemental_fodder<-FALSE #does Cons grazing give supp food
 Set_Adoption<-TRUE #Is adoption of Conservation set at the starting number
 Forecasts<- "No_one" #Can take values of "No_one", "Everyone", "Rich","Poor", "Conservation"
 ForecastError<-0 #How wrong are forecasts.#basically ranges 0:100
-Fodder_Price_Per_Cow<-100000 #play with this
-Animal_cost<-5 #Price of animals. Used for buying/selling and also financial gains from having animals
-CapitalGainRate<-1.02 #Financial gains from money in the bank
-AnimalGainRate<-1.05 # Financial gains from having animals (multiplied by the value of the animals and paid in cash)
+Fodder_Price_Per_Cow<-2 #play with this. Set high to essentially eliminate from model
+CapitalGainRate<-1.00 #Financial gains from money in the bank
+AnimalGainRate<-0.15 # Financial gains from having animals (multiplied by the value of the animals and paid in cash)
 MaxGeneralSale<-0.2 #Maximum proportion of animals people can sell when NOT in conservation
 MaxConservationSale<-0.6 #Maximum proportion of animals people in conservation can sell
 AnimalBaseline<-2 #people never sell below this number
-TimeSteps<-50
+TimeSteps<-100
 #Make rain data
 source("../RCode/MakeStylizedLandscape.R")
 source("../RCode/PrecipTimeseries.R")
 PrecipStack<-PrecipTimeseries(TimeSteps=TimeSteps,StandardDev=0.2)
 
-SummaryDat<-data.frame(Time=0,AvgMoney=mean(Ranchers$economic_wellbeing),
+SummaryDat<-data.frame(Time=0,AvgMoney=mean(Ranchers$Money),
+                       Gini = ineq::ineq(Ranchers$TotalEconomicWellbeing,type="Gini"),
                        AvgCows = mean(Ranchers$stock_count),
                        TotalCows = sum(Ranchers$stock_count),
                        AverageGrass = mean(rstack[["T0Grass"]][]),
@@ -48,7 +48,11 @@ for(ts in 1:TimeSteps){
 RanchersPast<-Ranchers
 rstackPast<-rstack
 
-#
+#MATT PROPOSED CHANGES AFTER BREAK
+#CHANGE PAYOFF/COPYING SO THAT THE VISIBLE WELLBEING IS HIGHLY
+#DISPROPORTIONATE TOWARD COWS, BUT THEIR ACTUAL ECONOMIC BENEFITS 
+#ARENT SO HIGH. WILL NEED TO EDIT so there;s like animal gain rate real and 
+#animal gain rate observed (by others)
 
 
 #####Model scheduling ##########################
@@ -130,20 +134,22 @@ left_join(df2[,c("CommID","ProportionDeficit")], by = "CommID") %>% #get how man
 
 #In conditions where no supplemental fodder is available from the conservation program, animals die. 
 #In conditions where supplemental fodder is given by the conservation grazing program, it is distributed as necessary.
-if(Supplemental_fodder ==TRUE){ #give free food to people in conservation maybe limit this...
-  Ranchers$StockDeficit<-ifelse(Ranchers$Conservation==TRUE,0,Ranchers$StockDeficit)
+if(Supplemental_fodder ==TRUE){ #give free food to people in conservation. Limit to 10 or fewer.
+  
+  Ranchers$StockDeficit<-ifelse(Ranchers$Conservation==TRUE & Ranchers$stock_count <=10 ,0,Ranchers$StockDeficit)
+  
 }
 
 #Now reduce the stock deficit and the money of each person as they buy fodder
 Ranchers$MoneyDeficit<-Fodder_Price_Per_Cow*Ranchers$StockDeficit
 
 
-Ranchers$economic_wellbeing <-Ranchers$economic_wellbeing-Ranchers$MoneyDeficit #reduce their money by the deficit
+Ranchers$Money <-Ranchers$Money-Ranchers$MoneyDeficit #reduce their money by the deficit
 
 #If they had enough money, their deficit is gone. If not, it's the inverse of their money now.
-Ranchers$MoneyDeficit<-ifelse(Ranchers$economic_wellbeing <0, (Ranchers$economic_wellbeing*-1),0 )
+Ranchers$MoneyDeficit<-ifelse(Ranchers$Money <0, (Ranchers$Money*-1),0 )
 
-Ranchers$economic_wellbeing <-ifelse(Ranchers$economic_wellbeing <0, 0,Ranchers$economic_wellbeing ) #dont let it go below 0
+Ranchers$Money <-ifelse(Ranchers$Money <0, 0,Ranchers$Money ) #dont let it go below 0
 
 
 ######Module 3 - Animals die#####
@@ -170,12 +176,15 @@ rstack<-stack(rstack,ranimals)
 #We also want to give them money for each animal beyond what that animal is worth (as animals have more value than just sale value)
 
 #Make money from money
-Ranchers$economic_wellbeing<-Ranchers$economic_wellbeing*CapitalGainRate
+Ranchers$Money<-Ranchers$Money*CapitalGainRate
 
 #money from animals
-Ranchers$economic_wellbeing<-Ranchers$economic_wellbeing+(Ranchers$stock_count*Animal_cost*AnimalGainRate)
+Ranchers$Money<-Ranchers$Money+(Ranchers$stock_count*Animal_cost*AnimalGainRate)
 
-df2<-Ranchers%>%group_by(CommID)%>%summarise(Mean_economic_wellbeing=mean(economic_wellbeing),
+#Recalculate total economic wellbeing
+Ranchers<-Ranchers%>%mutate(TotalEconomicWellbeing=Money+(stock_count *Animal_cost))
+
+df2<-Ranchers%>%group_by(CommID)%>%summarise(Mean_economic_wellbeing=mean(TotalEconomicWellbeing),
                                              Conservation=as.logical(min(Conservation)))
 
 #Update raster with mean economic wellbeing by community
@@ -223,7 +232,8 @@ for (i in seq_len(nrow(df2))) {
   if (is.nan(payoff_B)) payoff_B <- 0
   
   # Payoff-biased probability of adopting A
-  pA <- exp(0.5 * payoff_A) / (exp(0.5 * payoff_A) + exp(0.5 * payoff_B))
+  #pA <- exp(.1 * payoff_A) / (exp(.1 * payoff_A) + exp(.1 * payoff_B))
+  pA <- 1 / (1 + exp(-0.1 * (payoff_A - payoff_B)))
   
   # Draw new behavior
   new_behavior[i] <- sample(c(TRUE, FALSE), size = 1, prob = c(pA, 1 - pA))
@@ -254,6 +264,8 @@ rstack<-stack(rstack,rCons)
 
 df<-raster::as.data.frame(rstack,xy=T)
 dfCons<-df%>%filter(Cons==1)#for just the conservation communities
+
+if(nrow(dfCons)>0){ #if there are still conservation communities
 dfCons<-dfCons%>%group_by(CommID)%>%
 mutate(
   min_grass = min(Grass, na.rm = TRUE),
@@ -271,10 +283,13 @@ mutate(
 
 dfCons <- dfCons %>%
   relocate(CommID , .after = y)
+}
 
 dfNotCons<-df%>%filter(Cons==0)#for just the conservation communities
-dfNotCons$Grazed<-1 #All grazed in non-conservation communities
 
+if(nrow(dfNotCons)>0){ #only if there are some not cons communities
+dfNotCons$Grazed<-1 #All grazed in non-conservation communities
+}
 df<-rbind(dfCons,dfNotCons)
 
 rGrazed  <- rasterFromXYZ(df[order(df$y, df$x), c("x", "y", "Grazed")]) #make this into a raster
@@ -309,14 +324,14 @@ PayoffUpdate<-function(dff){
     #get their own wellbeing and past strategy
     for (i in seq_len(n)) {
       self_id <- person_id[i]
-      self_val <- economic_wellbeing[i]
+      self_val <- TotalEconomicWellbeing[i]
       self_strategy <- PastStockChangeProp[i]
       
       # Exclude self from peer pool
       peer_idx <- setdiff(seq_len(n), i)
       sampled_idx <- sample(peer_idx, size = min(5, length(peer_idx)), replace = FALSE) #sample up to 5 people
       
-      peer_payoffs <- economic_wellbeing[sampled_idx]
+      peer_payoffs <- TotalEconomicWellbeing[sampled_idx]
       peer_strategies <- PastStockChangeProp[sampled_idx]
       
       if (sum(peer_payoffs) == 0) {
@@ -327,7 +342,7 @@ PayoffUpdate<-function(dff){
       
       chosen_peer <- sampled_idx[sample(seq_along(sampled_idx), size = 1, prob = probs)]
       
-      if (economic_wellbeing[chosen_peer] > self_val) {
+      if (TotalEconomicWellbeing[chosen_peer] > self_val) {
         result[i] <- PastStockChangeProp[chosen_peer]
       }
       # else keep original strategy
@@ -351,7 +366,7 @@ if(Forecasts=="Conservation"){
 }
 
 if(Forecasts=="Rich"){
-  Rich<-Ranchers%>%group_by(CommID)%>%summarise(wellbeing=mean(economic_wellbeing ))%>%
+  Rich<-Ranchers%>%group_by(CommID)%>%summarise(wellbeing=mean(TotalEconomicWellbeing ))%>%
     mutate(Rich=wellbeing>=quantile(wellbeing,0.75))%>%select(-wellbeing)
   Ranchers<-base::merge(Ranchers,Rich,by="CommID")
   
@@ -359,10 +374,11 @@ if(Forecasts=="Rich"){
   Poor<-Ranchers%>%dplyr::filter(Rich==FALSE) 
   Poor<-PayoffUpdate(Poor) #everyone else learns socially
   Ranchers<-rbind(Rich,Poor)
+  Ranchers<-Ranchers%>%select(-Rich) #remove this column, we don't need it anymore
   }  
   
 if(Forecasts=="Poor"){
-  Poor<-Ranchers%>%group_by(CommID)%>%summarise(wellbeing=mean(economic_wellbeing ))%>%
+  Poor<-Ranchers%>%group_by(CommID)%>%summarise(wellbeing=mean(TotalEconomicWellbeing ))%>%
     mutate(Poor=wellbeing<=quantile(wellbeing,0.25))%>%select(-wellbeing)
   Ranchers<-base::merge(Ranchers,Poor,by="CommID")
   
@@ -370,6 +386,7 @@ if(Forecasts=="Poor"){
   Rich<-Ranchers%>%dplyr::filter(Poor==FALSE) 
   Rich<-PayoffUpdate(Rich) #everyone else learns socially
   Ranchers<-rbind(Rich,Poor)
+  Ranchers<-Ranchers%>%select(-Poor)#remove this column, we don't need it anymore
 } 
 
 
@@ -382,26 +399,18 @@ NextGrass<-PrecipStack%>%filter(Time==ts)%>%as.data.frame(.)%>%select(-geometry,
 df<-base::merge(df,NextGrass,by=c("CommID","PlotID"))
 
 
-############START HERE. THIS NEEDS MORE THINKING
+# ### MODULE 7 SET/PREDICT GRASS GROWTH
 
-grass_growth <- function(current_grass, rain_quality) {
-  # Parameters (can be calibrated)
-  K <- 80  # Carrying capacity (e.g., max grass biomass)
-  r_max <- 0.8  # Maximum intrinsic growth rate per year
-  
-  # Rainfall effect (nonlinear): scaled between 0 and 1
-  rain_effect <- (rain_quality / 100)^5
-  
+# new fct with linear effect of rain quality (for grass growth) on grass growth
+grass_growth <- function(current_grass, rain_quality, r_max = 6, K = 110) {
   # Logistic growth equation modified by rainfall
-  growth <- r_max * rain_effect * current_grass * (1 - current_grass / K)
-  
-  # Update grass
+  growth <- (r_max * (rain_quality / 100)) * current_grass * (1 - current_grass / K)
+  # Update
   new_grass <- current_grass + growth
-  
-  # Ensure grass doesn't exceed carrying capacity
-  ##Not done
-  
-  return(new_grass)
+  # Ensure grass does not exceed carrying capacity and is positive
+  new_grass <- pmin(new_grass, K)
+  new_grass <- pmax(new_grass, 0)
+  new_grass
 }
 
 
@@ -450,7 +459,7 @@ Ranchers<- within(Ranchers, {
   
   # --- Buying Logic ---
   buying <- proposed_change > 0
-  max_affordable <- floor(economic_wellbeing / Animal_cost)  # maximum animals they can buy
+  max_affordable <- floor(Money / Animal_cost)  # maximum animals they can buy
   actual_change <- ifelse(buying, pmin(proposed_change, max_affordable), 0) #if buying, buy the smaller of what they want or what they can afford
   
   # --- Selling Logic ---
@@ -469,7 +478,7 @@ Ranchers<- within(Ranchers, {
   
   # Update animals and wealth
   stock_count <- stock_count + actual_change
-  economic_wellbeing <- economic_wellbeing  - Animal_cost * actual_change  # Note: selling gives positive change to wealth
+  Money <- Money  - Animal_cost * actual_change  # Note: selling gives positive change to wealth
   
   # Optional: log actual change
   actual_animals_change <- actual_change
@@ -485,6 +494,9 @@ Ranchers<-Ranchers%>%select(-c(StockDeficit,MoneyDeficit,new_strategy,animals_be
                      allowed_sell,max_sell,max_sell_prop,selling,actual_change,max_affordable,buying,proposed_change))
 
 
+#Make sure this is updated for the next round.
+Ranchers<-Ranchers%>%
+  mutate(TotalEconomicWellbeing=Money+(stock_count *Animal_cost))
 
 
 #Remake the Cows raster
@@ -512,12 +524,14 @@ names(NextGrass)[3]<-"Grass"
 df<-base::merge(df,NextGrass,by=c("x","y"))
 rstack<-rasterFromXYZ(df[order(df$y, df$x),])
 
-plot(rstack)
+#Shoul dprobably add a money layer
+plot(rstack[[c("Cons","Mean_economic_wellbeing","Grazed","Animal","Grass")]])
 #plot(rstack[["Grass"]])
 
 #### Add summary stats to table
 
-SummaryDat2<-data.frame(Time=ts,AvgMoney=mean(Ranchers$economic_wellbeing),
+SummaryDat2<-data.frame(Time=ts,AvgMoney=mean(Ranchers$Money),
+                        Gini = ineq::ineq(Ranchers$TotalEconomicWellbeing,type="Gini"),
                        AvgCows = mean(Ranchers$stock_count),
                        TotalCows = sum(Ranchers$stock_count),
                        AverageGrass = mean(rstack[["Grass"]][]),
@@ -533,7 +547,12 @@ SummaryDat<-rbind(SummaryDat,SummaryDat2)}
 p1<-ggplot(SummaryDat,aes(x=Time,y=AvgMoney))+geom_line()+ggtitle("Money")
 p2<-ggplot(SummaryDat,aes(x=Time,y=AvgCows))+geom_line()+ggtitle("Cows")
 p3<-ggplot(SummaryDat,aes(x=Time,y=AverageGrass))+geom_line()+ggtitle("Grass")
-p4<-ggplot(SummaryDat,aes(x=Time,y=PropCons))+geom_line()+ggtitle("Cons")
+p4<-ggplot(SummaryDat,aes(x=Time,y=Gini))+geom_line()+ggtitle("Gini")
+#is set conservation = FALSE
+#p5<-ggplot(SummaryDat,aes(x=Time,y=PropCons))+geom_line()+ggtitle("Cons") 
 
+#cowplot::plot_grid(p1, p2,p3,p4,p5)
 cowplot::plot_grid(p1, p2,p3,p4)
+
+
 
