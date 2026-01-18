@@ -103,8 +103,6 @@ scn_sd <- setNames(c(1, 0.4, 0.3), scenarios)
 # Full set of conditions for experiments 1-3 + supplemental (per default):
 conditions <- readRDS(CONDITIONS_RDS)
 
-conditions <- readRDS("ForecastAcc-conditions.rds")[3,]
-
 # Main loop over conditions -----------------------------------------------
 for (cond_id in seq_len(nrow(conditions))) {
   
