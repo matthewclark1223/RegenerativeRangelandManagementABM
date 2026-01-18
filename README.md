@@ -14,8 +14,7 @@ This repository contains the code for the agent-based model and experiments used
 - R ≥ 4.1
 - Packages for ABM and visualizations:
 ```r
-packages <- c("data.table", "doParallel", "doRNG", "sp", "foreach", "dplyr", "sf", "raster", "gstat", "spdep",
-              "ggplot2", "tidyverse", "cowplot", "ggh4x", "ggthemes", "vroom", "glue", "fs", "purrr", "tibble")
+packages <- c("cowplot", "data.table", "doParallel", "doRNG", "dplyr", "foreach", "forcats", "fs", "ggh4x", "ggplot2", "ggthemes", "glue", "gstat", "ineq", "iterators", "lubridate", "parallel", "purrr", "raster", "readr", "rngtools", "sf", "sp", "spData", "spdep", "stringr", "tibble", "tidyr", "tidyverse", "vroom")
 
 install.packages(setdiff(packages, rownames(installed.packages())))
 ```
