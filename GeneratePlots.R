@@ -1179,7 +1179,7 @@ ggplot2::ggsave(
 
 # Files to process
 
-files <- c("Ts_Data/Ranchers/FOREC_Conservation_ADOP_TRUE_FODD_TRUE_PROPCONS_0.5_FORECERR_0_beta_0.1_Ranchers.csv.gz"
+files <- c("Ts_Data/Ranchers/FOREC_Conservation_ADOP_TRUE_FODD_TRUE_PROPCONS_0.5_FORECERR_0_Ranchers.csv.gz"
            # ,"Ts_Data/Ranchers/FOREC_Conservation_ADOP_TRUE_FODD_FALSE_PROPCONS_0.5_FORECERR_0_beta_0.1_Ranchers.csv.gz"
 )
 
