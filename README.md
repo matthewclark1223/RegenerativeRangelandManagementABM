@@ -4,7 +4,7 @@ This repository contains the code for the agent-based model and experiments used
 
 ## Repository structure
 - **RunModel.R**: Code for the agent-based model (ABM). Sources landscape files from `StylizedLandscape/` and precipitation from `PrecipTimeseries.R` to create the initial landscape and generate precipitation scenarios. Runtime for one full setting across the three climate scenarios is ~45 minutes. It also supports a toy quickstart via environment variables.
-- **ToyRun.R**: Code for a toy run of ``RunModel.R``.
+- **RunToy.R**: Code for a toy run of ``RunModel.R``.
 - **GeneratePlots.R**: Code to reproduce visualizations for experiments 1-3 and supplementals from the manuscript. It expects ABM outputs in a Ts_Data-style folder (see below).
 - **ExperimentConditions.rds**, **ConditionsExp1.rds**: Predefined experimental settings for running the ABM, used in manuscript experiments 1 to 3 and supplemental material (forecast settings, provision of supplemental fodder, social learning settings, etc.). The file ``ConditionsExp1.rds`` includes the conditions for experiment 1 only to run the toy example.
 - **StylizedLandscape/**: Scripts and inputs for creating the stylized landscape.
@@ -14,14 +14,13 @@ This repository contains the code for the agent-based model and experiments used
 - R ≥ 4.1
 - Download the file [povmap-grdi-v1.tif](https://syncandshare.lrz.de/getlink/fiPw7h8k9QaACopENWok9m/) and place it inside the `StylizedLandscape/` folder.
 - Packages for ABM and visualizations:
+```r
+packages <- c("data.table", "doParallel", "doRNG", "sp", "foreach", "dplyr", "sf", "raster", "gstat", "spdep",
+              "ggplot2", "tidyverse", "cowplot", "ggh4x", "ggthemes", "vroom", "glue", "fs", "purrr", "tibble")
+
+install.packages(setdiff(packages, rownames(installed.packages())))
 ```
-packages ‹- c(
-"data. table", "doParallel", "doRNG", "sp", "foreach", "dplyr", "sf", "raster", "in
-"gstat", "spdep", "ggplot2", "tidyverse", "cowplot", "ggh4x", "ggthemes",
-"vroom", "glue", "fs", "purri", "tibble"
-)
-install.packages (setdiff(packages, rownames(installed.packages ())))
-```
+
 
 ## Toy example (quickstart)
 The repo includes a small toy run that reproduces the core pipeline without the full ABM runtime. If you keep the plot pane open, you’ll see the stylized landscape update as the run progresses.
@@ -30,7 +29,14 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 - Runs a minimal ABM configuration (one repetition of 100 timesteps across 3 precipitation scenarios, using only the conditions from experiment 1) and writes the outputs to `Ts_Data_toy/`.
 - Generates ABM burn-in plot into `Manuscript_Vis_toy/`.
 
+1. Clone this repository to your local machine:
+```bash
+  git clone https://github.com/matthewclark1223/RegenerativeRangelandManagementABM.git
+  cd RegenerativeRangelandManagementABM
 ```
+
+2. Run the toy model:
+```bash
   Rscript RunToy.R
 ```
 
@@ -38,8 +44,8 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 
 1. Clone this repository to your local machine:
   ```bash
-  git clone https://github.com/matthewclark1223/RegenerativeRangelandManagementABM.git
-  cd RegenerativeRangelandManagementABM
+    git clone https://github.com/matthewclark1223/RegenerativeRangelandManagementABM.git
+    cd RegenerativeRangelandManagementABM
  ```
 
 2. Generate data
@@ -47,7 +53,7 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 *Option A (full run, long):*
 ```bash
   Rscript RunModel.R
-  ```
+```
 
 *Option B (use pregenerated data):*
 
@@ -57,7 +63,7 @@ Download [Ts_Data](https://syncandshare.lrz.de/getlink/fiPw7h8k9QaACopENWok9m/) 
 ```bash
   # default expects Ts_Data and writes to Manuscript_Vis
   Rscript GeneratePlots.R
-  ```
+```
 
 ## How to customize the agent-based model
 
