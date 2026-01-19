@@ -28,8 +28,6 @@ library(sp)
 library(spData)
 library(spdep)
 
-
-
 # Config via environment variables  -----------------------------------------
 # Enables easy-to-run toy example for ABM with one repetition and 
 # experiment one visualization via environment variables
