@@ -1,17 +1,33 @@
 
 # Script set-up ----------------------------------------------------------------
 # Packages
+library(tidyverse)
+
+library(cowplot)
 library(data.table)
 library(doParallel)
 library(doRNG)
-library(sp)
-library(foreach)
 library(dplyr)
-library(sf)
-library(raster)
-library(ineq)
+library(foreach)
+library(iterators)
+library(rngtools)
+
+library(fs)
+library(glue)
+library(vroom)
+
+library(ggh4x)
+library(ggthemes)
+
 library(gstat)
+library(ineq)
+library(parallel)
+library(raster)
+library(sf)
+library(sp)
+library(spData)
 library(spdep)
+
 
 
 # Config via environment variables  -----------------------------------------
