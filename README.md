@@ -48,7 +48,7 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 
 2. Generate data
 
-*Option A (full run, long):*
+*Option A (full run. This will take several days to run on a standard desktop):*
 ```bash
   Rscript RunModel.R
 ```
