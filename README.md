@@ -30,6 +30,7 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 **What it does**
 - Runs a minimal ABM configuration (one repetition of 100 timesteps across 3 precipitation scenarios, using only the conditions from experiment 1) and writes the outputs to `Ts_Data_toy/`.
 - Generates ABM burn-in plot into `Manuscript_Vis_toy/`.
+- The code below is presented such that the entire analysis can be replicated from the command line. Alternatively, users can download the R scripts and run them using RStudio or another R environment. 
 
 1. Clone this repository to your local machine:
 ```bash
@@ -61,7 +62,7 @@ If you have previously run `RunToy.R` in the same R session, **restart your R se
   Rscript RunModel.R
 ```
 
-*Option B (use pregenerated data):*
+*Option B (use pre-generated data):*
 
 Download [Ts_Data](https://syncandshare.lrz.de/getlink/fiPw7h8k9QaACopENWok9m/) and place the folder in the repo root next to the scripts.
 
