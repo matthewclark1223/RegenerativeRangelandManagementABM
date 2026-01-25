@@ -259,8 +259,8 @@ for (fname in files){
   
   # Save combined dataframe of all outcome datasets post burn in phase
   df_full_last30 <- df_full %>%
-    ungroup() %>%
-    dplyr::filter(Time > max(Time, na.rm = TRUE) - 30) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(Time > max(Time) - 30) %>%
     dplyr::select(-c(
       TotalCows,
       TotalGrass,
