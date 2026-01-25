@@ -116,7 +116,7 @@ for (fname in files){
       Forecasts, Set_Adoption, Supplemental_fodder,
       Starting_Prop_Conservation, ForecastError
     ) %>%
-    summarize(
+    dplyr::summarize(
       across(
         c(AvgMoney, AvgCows, AvgGrass, Gini),
         list(mean = ~mean(.x, na.rm = TRUE), sd = ~sd(.x, na.rm = TRUE)),
