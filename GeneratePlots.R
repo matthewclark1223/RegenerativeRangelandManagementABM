@@ -1,4 +1,3 @@
-library(dplyr)
 library(ggplot2)
 library(tidyverse)
 library(cowplot)
@@ -12,6 +11,7 @@ library(glue)
 library(fs)
 library(purrr)
 library(tibble)
+library(dplyr)
 
 if (!dir.exists("Manuscript_Vis")) {
   dir.create("Manuscript_Vis")
