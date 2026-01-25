@@ -13,7 +13,10 @@ This repository contains the code for the agent-based model and experiments used
 ## Prerequisites
 - R ≥ 4.1
 - Download the file [povmap-grdi-v1.tif](https://syncandshare.lrz.de/getlink/fiPw7h8k9QaACopENWok9m/) and place it inside the `StylizedLandscape/` folder.
-- Packages for ABM and visualizations:
+- Packages for ABM and visualizations
+
+Run the following code within an R session (e.g., RStudio or the R console):
+
 ```r
 packages <- c("cowplot", "data.table", "doParallel", "doRNG", "dplyr", "foreach", "forcats", "fs", "ggh4x", "ggplot2", "ggthemes", "glue", "gstat", "Hmisc", "ineq", "iterators", "lubridate", "parallel", "purrr", "raster", "readr", "rngtools", "R.utils", "sf", "sp", "spData", "spdep", "stringr", "tibble", "tidyr", "tidyverse", "vroom")
 
