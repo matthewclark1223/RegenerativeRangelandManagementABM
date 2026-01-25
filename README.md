@@ -41,6 +41,10 @@ The repo includes a small toy run that reproduces the core pipeline without the 
 
 ## Reproduce the full experiments
 
+**Note:**
+If you have previously run `RunToy.R` in the same R session, **restart your R session before proceeding**, as settings from the toy configuration may persist.
+
+
 1. Clone this repository to your local machine:
   ```bash
     git clone https://github.com/matthewclark1223/RegenerativeRangelandManagementABM.git
