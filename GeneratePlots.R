@@ -258,14 +258,23 @@ for (fname in files){
   )
   
   # Save combined dataframe of all outcome datasets post burn in phase
-  df_full_last30 <- df_full %>%
-    dplyr::ungroup() %>%
-    dplyr::filter(Time > max(Time) - 30) %>%
-    dplyr::select(-c(
-      TotalCows,
-      TotalGrass,
-      Time, 
-      Rep)) 
+  # df_full_last30 <- df_full %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::filter(Time > max(Time) - 30) %>%
+  #   dplyr::select(-c(
+  #     TotalCows,
+  #     TotalGrass,
+  #     Time, 
+  #     Rep)) 
+  
+  cutoff_time <- max(df_full$Time, na.rm = TRUE) - 30
+  
+  df_full_last30 <- df_full[df_full$Time > cutoff_time, , drop = FALSE]
+  
+  df_full_last30 <- df_full_last30[
+    , !names(df_full_last30) %in% c("TotalCows", "TotalGrass", "Time", "Rep"),
+    drop = FALSE
+  ]
   
   
   write.csv(
