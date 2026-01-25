@@ -39,12 +39,6 @@ The repo includes a small toy run that reproduces the core pipeline without the 
   Rscript RunToy.R
 ```
 
-**Note (command-line usage):**  These instructions assume that `Rscript` is accessible from the command line.  If you receive a “command not found” error, R may not be on your system PATH. In that case, run the script by specifying the full path to `Rscript`, for example on Windows:
-
-```bash
-"C:/Program Files/R/R-4.5.1/bin/Rscript.exe" RunToy.R
-```
-
 ## Reproduce the full experiments
 
 **Note:**
@@ -73,9 +67,6 @@ Download [Ts_Data](https://syncandshare.lrz.de/getlink/fiPw7h8k9QaACopENWok9m/) 
   # default expects Ts_Data and writes to Manuscript_Vis
   Rscript GeneratePlots.R
 ```
-
-**Note:**  As above, this step assumes that `Rscript` is available from the command line.  If not, invoke it using the full path to `Rscript` (see *Toy example (quickstart)*).
-
 
 ## How to customize the agent-based model
 
